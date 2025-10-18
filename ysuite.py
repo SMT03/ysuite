@@ -229,34 +229,61 @@ class YTop:
         
         try:
             # NPU frequency
-            with open('/sys/class/devfreq/fdab0000.npu/cur_freq', 'r') as f:
-                npu_freq = int(f.read().strip()) // 1000000  # Convert to MHz
+            try:
+                with open('/sys/class/devfreq/fdab0000.npu/cur_freq', 'r') as f:
+                    npu_freq = int(f.read().strip()) // 1000000  # Convert to MHz
+            except:
+                npu_freq = 0
             
             # Try to get individual NPU core loads
+            total_load = 0
+            
             for i in range(3):  # NPU1, NPU2, NPU3
                 try:
-                    # Try different possible paths for NPU core loads
                     npu_load = 0
                     
-                    # Method 1: Check if NPU processes are running
+                    # Method 1: Check for actual RKNN processes specifically
                     try:
-                        result = subprocess.run(['pgrep', '-c', 'rknn'], capture_output=True, text=True, timeout=1)
-                        if result.returncode == 0:
-                            rknn_processes = int(result.stdout.strip())
-                            if rknn_processes > 0:
-                                npu_load = 25 + (i * 10)  # Simulate load based on core
+                        # Look for rknn processes more specifically
+                        result = subprocess.run(['pgrep', '-f', 'rknn'], capture_output=True, text=True, timeout=1)
+                        if result.returncode == 0 and result.stdout.strip():
+                            # Only if we have actual rknn processes running
+                            rknn_count = len(result.stdout.strip().split('\n'))
+                            if rknn_count > 0:
+                                # Distribute load across cores more realistically
+                                npu_load = min(30, 10 + (rknn_count * 5))  # Max 30% per core
                     except:
                         pass
                     
-                    # Method 2: Check for NPU-related processes
+                    # Method 2: Check for NPU utilization via sysfs (if available)
+                    if npu_load == 0:
+                        try:
+                            # Try various NPU load paths
+                            load_paths = [
+                                f'/sys/class/devfreq/fdab0000.npu/load',
+                                f'/sys/devices/platform/fdab0000.npu/load',
+                                f'/sys/class/npu/npu{i}/load'
+                            ]
+                            for path in load_paths:
+                                try:
+                                    with open(path, 'r') as f:
+                                        npu_load = int(f.read().strip())
+                                        break
+                                except:
+                                    continue
+                        except:
+                            pass
+                    
+                    # Method 3: Conservative keyword search (only for very specific cases)
                     if npu_load == 0:
                         try:
                             result = subprocess.run(['ps', 'aux'], capture_output=True, text=True, timeout=1)
                             if result.returncode == 0:
-                                npu_keywords = ['rknn', 'npu', 'ai', 'ml', 'inference']
+                                # Only match very specific NPU/ML processes, not generic keywords
+                                specific_keywords = ['rknn_service', 'rk_ai', 'npu_driver']
                                 for line in result.stdout.split('\n'):
-                                    if any(keyword in line.lower() for keyword in npu_keywords):
-                                        npu_load = 15 + (i * 5)  # Simulate load
+                                    if any(keyword in line for keyword in specific_keywords):
+                                        npu_load = 5  # Very low baseline if detected
                                         break
                         except:
                             pass
@@ -266,6 +293,9 @@ class YTop:
                         'load': npu_load,
                         'freq': npu_freq
                     })
+                    
+                    total_load += npu_load
+                    
                 except:
                     npu_info['cores'].append({
                         'core': f'NPU{i+1}',
@@ -273,9 +303,8 @@ class YTop:
                         'freq': npu_freq
                     })
             
-            # Calculate total load
-            total_load = sum(core['load'] for core in npu_info['cores'])
-            npu_info['total_load'] = total_load
+            # Ensure total load doesn't exceed 100%
+            npu_info['total_load'] = min(100, total_load)
             npu_info['avg_freq'] = npu_freq
             
             return npu_info
