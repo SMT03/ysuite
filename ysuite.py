@@ -392,53 +392,78 @@ class YTop:
     
     def get_vpu_info(self):
         """Get VPU (Video Processing Unit) information"""
-        vpu_info = {'load': 0, 'freq': 0, 'status': 'unknown'}
+        vpu_info = {'load': 0, 'freq': 0, 'status': 'idle'}
         
         try:
-            # Try to get VPU load from sysfs
             load = 0
             freq = 0
+            status = 'idle'
             
-            # Method 1: Check /sys/class/vpu/vpu0/load
+            # Method 1: Try to get VPU load from devfreq (most accurate)
             try:
-                with open('/sys/class/vpu/vpu0/load', 'r') as f:
+                with open('/sys/class/devfreq/fdea0000.vpu/load', 'r') as f:
                     load = int(f.read().strip())
             except:
-                # Method 2: Check /sys/devices/platform/*vpu*/load
+                # Method 2: Try alternative VPU devfreq path
                 try:
-                    import glob
-                    vpu_paths = glob.glob('/sys/devices/platform/*vpu*/load')
-                    if vpu_paths:
-                        with open(vpu_paths[0], 'r') as f:
-                            load = int(f.read().strip())
+                    with open('/sys/class/devfreq/fdb50000.vpu/load', 'r') as f:
+                        load = int(f.read().strip())
                 except:
-                    pass
+                    # Method 3: Check /sys/kernel/debug/rkvdec (if available)
+                    try:
+                        import glob
+                        vpu_debug_paths = glob.glob('/sys/kernel/debug/rkvdec*/load')
+                        if vpu_debug_paths:
+                            with open(vpu_debug_paths[0], 'r') as f:
+                                load = int(f.read().strip())
+                    except:
+                        pass
             
             # Try to get VPU frequency
             try:
-                with open('/sys/class/vpu/vpu0/freq', 'r') as f:
+                with open('/sys/class/devfreq/fdea0000.vpu/cur_freq', 'r') as f:
                     freq = int(f.read().strip()) // 1000000  # Convert to MHz
             except:
                 try:
-                    import glob
-                    freq_paths = glob.glob('/sys/devices/platform/*vpu*/freq')
-                    if freq_paths:
-                        with open(freq_paths[0], 'r') as f:
-                            freq = int(f.read().strip()) // 1000000
+                    with open('/sys/class/devfreq/fdb50000.vpu/cur_freq', 'r') as f:
+                        freq = int(f.read().strip()) // 1000000
                 except:
-                    freq = 0
+                    try:
+                        import glob
+                        freq_paths = glob.glob('/sys/devices/platform/*vpu*/devfreq/*vpu*/cur_freq')
+                        if freq_paths:
+                            with open(freq_paths[0], 'r') as f:
+                                freq = int(f.read().strip()) // 1000000
+                    except:
+                        freq = 0
             
-            # Try to get VPU status using rkmpp if available
-            status = 'idle'
-            try:
-                # Check if MPP processes are running
-                result = subprocess.run(['pgrep', '-c', 'mpp'], capture_output=True, text=True, timeout=1)
-                if result.returncode == 0 and int(result.stdout.strip()) > 0:
-                    status = 'active'
-                    if load == 0:  # If sysfs didn't give load, estimate based on processes
-                        load = 20  # Assume some load if MPP is running
-            except:
-                pass
+            # Determine status based on actual activity, not just process presence
+            # Only mark as active if load is detected or we see active video processes
+            if load > 0:
+                status = 'active'
+            else:
+                # Check for actual video encoding/decoding processes
+                try:
+                    # Look for ffmpeg, mpp, or other video processing
+                    result = subprocess.run(['ps', 'aux'], capture_output=True, text=True, timeout=1)
+                    if result.returncode == 0:
+                        active_keywords = ['ffmpeg', 'h264', 'h265', 'hevc', 'mpp_enc', 'mpp_dec', 'rkvenc', 'rkvdec']
+                        for line in result.stdout.split('\n'):
+                            # Check if any video processing is happening
+                            if any(keyword in line.lower() for keyword in active_keywords):
+                                # Check if process is actually using CPU (not idle)
+                                parts = line.split()
+                                if len(parts) > 2:
+                                    try:
+                                        cpu_usage = float(parts[2])
+                                        if cpu_usage > 0.1:  # If using any CPU
+                                            status = 'active'
+                                            # Don't set arbitrary load - leave at 0 if sysfs doesn't provide it
+                                            break
+                                    except:
+                                        pass
+                except:
+                    pass
             
             vpu_info['load'] = load
             vpu_info['freq'] = freq
@@ -446,7 +471,7 @@ class YTop:
             
             return vpu_info
         except:
-            return {'load': 0, 'freq': 0, 'status': 'unknown'}
+            return {'load': 0, 'freq': 0, 'status': 'idle'}
     
     def get_power_info(self):
         """Get power, voltage, and current information"""
