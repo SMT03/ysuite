@@ -32,6 +32,12 @@ A unified package for headless Rock 5B+ systems with real-time monitoring, crash
 sudo ./install_ysuite.sh
 ```
 
+### Uninstall
+```bash
+# Remove YSuite completely
+sudo ./uninstall_ysuite.sh
+```
+
 ### Direct Board Installation
 ```bash
 # Copy files to your Rock 5B+ board (via USB, SD card, or direct transfer)
@@ -65,6 +71,7 @@ ypower
 
 - **ysuite.py** - Main Python script with all functionality (CPU, GPU, NPU, RGA, VPU monitoring)
 - **install_ysuite.sh** - Installation script
+- **uninstall_ysuite.sh** - Uninstallation script
 - **deploy_ysuite.sh** - Installation guide and instructions
 - **YSUITE_SUMMARY.md** - Detailed documentation
 
