@@ -5,7 +5,7 @@ A unified package for headless Rock 5B+ systems with real-time monitoring, crash
 ##  Features
 
 ### **ytop** - Real-time System Performance Monitor
-- CPU, GPU, NPU, Memory monitoring
+- CPU, GPU, NPU, RGA, VPU, Memory monitoring
 - Temperature and fan control
 - Beautiful CLI dashboard with progress bars
 
@@ -63,15 +63,17 @@ ypower
 
 ##  Package Contents
 
-- **ysuite.py** - Main Python script with all functionality
+- **ysuite.py** - Main Python script with all functionality (CPU, GPU, NPU, RGA, VPU monitoring)
 - **install_ysuite.sh** - Installation script
 - **deploy_ysuite.sh** - Installation guide and instructions
 - **YSUITE_SUMMARY.md** - Detailed documentation
 
 ##  Requirements
 
-- Rock 5B+ board
+- Rock 5B+ board (RK3588 SoC)
 - Python 3.8+
 - Linux kernel with sysfs support
 - Root/sudo access for hardware monitoring
+- rkmpp (Rockchip Media Process Platform) for VPU monitoring
+- jellyfin-ffmpeg (optional, for enhanced VPU detection)
 

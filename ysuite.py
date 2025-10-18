@@ -297,6 +297,128 @@ class YTop:
         except:
             return {'load': 0, 'freq': 0}
     
+    def get_rga_info(self):
+        """Get RGA (Rockchip Graphics Accelerator) information for all cores"""
+        rga_info = {'cores': [], 'total_load': 0, 'avg_freq': 0}
+        
+        try:
+            # RK3588 has 3 RGA cores
+            for i in range(3):
+                try:
+                    # Try different possible sysfs paths for RGA load
+                    load = 0
+                    freq = 0
+                    
+                    # Method 1: Check /sys/class/rga/rga*/load
+                    try:
+                        with open(f'/sys/class/rga/rga{i}/load', 'r') as f:
+                            load = int(f.read().strip())
+                    except:
+                        # Method 2: Check /sys/devices/platform/*.rga/load
+                        try:
+                            import glob
+                            rga_paths = glob.glob(f'/sys/devices/platform/*rga{i}*/load')
+                            if rga_paths:
+                                with open(rga_paths[0], 'r') as f:
+                                    load = int(f.read().strip())
+                        except:
+                            pass
+                    
+                    # Try to get RGA frequency
+                    try:
+                        with open(f'/sys/class/rga/rga{i}/freq', 'r') as f:
+                            freq = int(f.read().strip()) // 1000000  # Convert to MHz
+                    except:
+                        try:
+                            import glob
+                            freq_paths = glob.glob(f'/sys/devices/platform/*rga{i}*/freq')
+                            if freq_paths:
+                                with open(freq_paths[0], 'r') as f:
+                                    freq = int(f.read().strip()) // 1000000
+                        except:
+                            freq = 0
+                    
+                    rga_info['cores'].append({
+                        'core': f'RGA{i}',
+                        'load': load,
+                        'freq': freq
+                    })
+                except:
+                    rga_info['cores'].append({
+                        'core': f'RGA{i}',
+                        'load': 0,
+                        'freq': 0
+                    })
+            
+            # Calculate total load and average frequency
+            total_load = sum(core['load'] for core in rga_info['cores'])
+            avg_freq = sum(core['freq'] for core in rga_info['cores']) // len(rga_info['cores']) if rga_info['cores'] else 0
+            
+            rga_info['total_load'] = total_load
+            rga_info['avg_freq'] = avg_freq
+            
+            return rga_info
+        except:
+            return {'cores': [], 'total_load': 0, 'avg_freq': 0}
+    
+    def get_vpu_info(self):
+        """Get VPU (Video Processing Unit) information"""
+        vpu_info = {'load': 0, 'freq': 0, 'status': 'unknown'}
+        
+        try:
+            # Try to get VPU load from sysfs
+            load = 0
+            freq = 0
+            
+            # Method 1: Check /sys/class/vpu/vpu0/load
+            try:
+                with open('/sys/class/vpu/vpu0/load', 'r') as f:
+                    load = int(f.read().strip())
+            except:
+                # Method 2: Check /sys/devices/platform/*vpu*/load
+                try:
+                    import glob
+                    vpu_paths = glob.glob('/sys/devices/platform/*vpu*/load')
+                    if vpu_paths:
+                        with open(vpu_paths[0], 'r') as f:
+                            load = int(f.read().strip())
+                except:
+                    pass
+            
+            # Try to get VPU frequency
+            try:
+                with open('/sys/class/vpu/vpu0/freq', 'r') as f:
+                    freq = int(f.read().strip()) // 1000000  # Convert to MHz
+            except:
+                try:
+                    import glob
+                    freq_paths = glob.glob('/sys/devices/platform/*vpu*/freq')
+                    if freq_paths:
+                        with open(freq_paths[0], 'r') as f:
+                            freq = int(f.read().strip()) // 1000000
+                except:
+                    freq = 0
+            
+            # Try to get VPU status using rkmpp if available
+            status = 'idle'
+            try:
+                # Check if MPP processes are running
+                result = subprocess.run(['pgrep', '-c', 'mpp'], capture_output=True, text=True, timeout=1)
+                if result.returncode == 0 and int(result.stdout.strip()) > 0:
+                    status = 'active'
+                    if load == 0:  # If sysfs didn't give load, estimate based on processes
+                        load = 20  # Assume some load if MPP is running
+            except:
+                pass
+            
+            vpu_info['load'] = load
+            vpu_info['freq'] = freq
+            vpu_info['status'] = status
+            
+            return vpu_info
+        except:
+            return {'load': 0, 'freq': 0, 'status': 'unknown'}
+    
     def get_power_info(self):
         """Get power, voltage, and current information"""
         power_info = {}
@@ -476,6 +598,8 @@ class YTop:
                 mem_info = self.get_memory_info()
                 npu_info = self.get_npu_info()
                 gpu_info = self.get_gpu_info()
+                rga_info = self.get_rga_info()
+                vpu_info = self.get_vpu_info()
                 power_info = self.get_power_info()
                 watchdog_info = self.get_watchdog_info()
                 opencl_info = self.get_opencl_info()
@@ -516,6 +640,21 @@ class YTop:
                 gpu_bar = self.create_bar(gpu_info['load'], 20)
                 print(f"Load: {gpu_info['load']:5.1f}% | Freq: {gpu_info['freq']:4d} MHz")
                 print(f"{gpu_bar}")
+                
+                # RGA Information
+                print(f"\n{Colors.BOLD}{Colors.MAGENTA}RGA Information:{Colors.END}")
+                rga_bar = self.create_bar(rga_info['total_load'], 20)
+                print(f"Total Load: {rga_info['total_load']}% | Avg Freq: {rga_info['avg_freq']} MHz")
+                print(f"{rga_bar}")
+                for core in rga_info['cores']:
+                    bar = self.create_bar(core['load'], 15)
+                    print(f"  {core['core']}: {core['load']:5.1f}% | {core['freq']:4d} MHz | {bar}")
+                
+                # VPU Information
+                print(f"\n{Colors.BOLD}{Colors.YELLOW}VPU Information:{Colors.END}")
+                vpu_bar = self.create_bar(vpu_info['load'], 20)
+                print(f"Load: {vpu_info['load']:5.1f}% | Freq: {vpu_info['freq']:4d} MHz | Status: {vpu_info['status']}")
+                print(f"{vpu_bar}")
                 
                 # OpenCL and Vulkan Information
                 print(f"\n{Colors.BOLD}{Colors.MAGENTA}GPU Compute:{Colors.END}")

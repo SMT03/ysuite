@@ -15,6 +15,14 @@ apt install -y python3-pip python3-psutil python3-requests python3-rich python3-
 echo "Installing Python dependencies via apt..."
 # Note: Using apt instead of pip3 to avoid externally-managed-environment error
 # python3-rich and python3-colorama should be available in Debian repositories
+echo "Checking for rkmpp (required for VPU monitoring)..."
+if ! dpkg -l | grep -q rkmpp; then
+    echo "⚠️  WARNING: rkmpp not found. VPU monitoring will be limited."
+    echo "   Install rkmpp for full VPU load monitoring:"
+    echo "   sudo apt install rkmpp"
+else
+    echo "✅ rkmpp found - VPU monitoring enabled"
+fi
 echo "Installing YSuite to /usr/local/bin..."
 cp ysuite.py /usr/local/bin/ysuite
 chmod +x /usr/local/bin/ysuite
@@ -36,7 +44,7 @@ echo ""
 echo "✅ YSuite installation completed successfully!"
 echo ""
 echo "Available commands:"
-echo "  ytop    - Real-time system performance monitor"
+echo "  ytop    - Real-time system performance monitor (CPU, GPU, NPU, RGA, VPU, Memory)"
 echo "  ylog    - System log monitoring and classification"
 echo "  ycrash  - Crash detection and analysis"
 echo "  ypower  - Power monitoring and PD negotiation"

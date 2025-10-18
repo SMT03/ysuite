@@ -8,4 +8,6 @@ modules.order
 Module.symvers
 build/
 *.img
+__pycache__/
+*.pyc
 *.img.xz
