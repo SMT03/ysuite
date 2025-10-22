@@ -1,8 +1,40 @@
 #!/usr/bin/env python3
 """
-YSuite - Comprehensive Rock 5B+ Monitoring and Management Suite
-A unified package for headless Rock 5B+ systems with real-time monitoring,
-crash detection, power management, and system optimization.
+YSuite - Comprehensive Radxa ROCK 5B+ Monitoring and Management Suite
+
+A unified monitoring package for headless Radxa ROCK 5B+ systems with
+real-time hardware monitoring, crash detection, power management, and
+system optimization.
+
+Hardware Support:
+    - SoC: Rockchip RK3588 (8nm process)
+    - CPU: 8-core (4x Cortex-A76 @ 2.2-2.4GHz + 4x Cortex-A55 @ 1.8GHz)
+    - GPU: Arm Mali-G610 MC4 (OpenGL ES 3.2, OpenCL 2.2, Vulkan 1.2)
+    - NPU: 6 TOPS AI accelerator with RKNPU2 support
+    - RGA: 3x Rockchip Graphics Accelerator cores
+    - VPU: 8K@60fps decode, 8K@30fps encode
+    - Memory: LPDDR5 @ 5500MT/s (4GB-32GB)
+
+Monitoring Capabilities:
+    - CPU: Per-core load/frequency via /proc/stat and cpufreq
+    - GPU: Mali-G610 load/freq via /sys/class/devfreq/fb000000.gpu-mali
+    - NPU: Process detection and load estimation
+    - RGA: 3-core graphics accelerator monitoring
+    - VPU: Video processing via /sys/class/devfreq/fdea0000.vpu
+    - Memory: LPDDR5 usage tracking via /proc/meminfo
+    - Thermal: SoC temperature zones (80°C throttling detection)
+    - Power: USB-C PD and SARADC_IN4 voltage monitoring
+    - Fan: PWM-based cooling management
+
+System Requirements:
+    - Radxa ROCK 5B+ with Debian/Ubuntu Linux
+    - Mali GPU drivers (Panfrost or proprietary)
+    - rkmpp for VPU monitoring
+    - Root/sudo access for hardware monitoring
+
+Author: YSuite Development Team
+License: Open Source
+Version: 1.0.0
 """
 
 import os
