@@ -1,29 +1,28 @@
-# rtop - Rockchip Performance Monitor
+# rtop - Rockchip Performance Monitor (Reference)
 
-**rtop** is a performance monitor designed for the Rockchip RK3566/68/88 processors.
+**rtop** is an open-source graphical performance monitor for Rockchip RK3566/68/88 processors, developed by [Q-engineering](https://qengineering.eu/). It provides a Qt5-based GUI dashboard and can complement YSuite's CLI monitoring tools.
 
-![Screenshot_20240807_111347](https://github.com/user-attachments/assets/7cace014-41de-4bfb-ba25-27138e74c6f3)
+![rtop screenshot](https://github.com/user-attachments/assets/7cace014-41de-4bfb-ba25-27138e74c6f3)
 
-## rtop for the original Rock OS
+> **Note**: rtop is an independent third-party project, not part of YSuite. It is documented here as a reference for users who prefer a graphical interface alongside YSuite's CLI tools.
+
+## Variants
+
+- **Rock OS (original Radxa image)**: [Qengineering/rtop-KDE](https://github.com/Qengineering/rtop-KDE)
+- **Ubuntu OS (Joshua Riek image)**: [Qengineering/rtop-Ubuntu](https://github.com/Qengineering/rtop-Ubuntu)
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
-Specifically built for Rockchip processors using Qt5 by [Q-engineering](https://qengineering.eu/)
-
-##### If you have the Ubuntu OS by Joshua Riek, please install https://github.com/Qengineering/rtop-Ubuntu
-
 ## Installing rtop
 
-To install **rtop**, download the repository, make the install script executable, and run it:
-
 ```bash
-$ git clone https://github.com/Qengineering/rtop-KDE.git rtop
-$ cd rtop
-$ sudo chmod +x ./install_rtop.sh 
-$ sudo ./install_rtop.sh 
+git clone https://github.com/Qengineering/rtop-KDE.git rtop
+cd rtop
+sudo chmod +x ./install_rtop.sh
+sudo ./install_rtop.sh
 ```
 
-If your system complains about missing the `libQt5Widgets.so.5` library, you can install it with the next command:
+If the `libQt5Widgets.so.5` library is missing:
 
 ```bash
 sudo apt-get install libqt5widgets5
@@ -31,65 +30,34 @@ sudo apt-get install libqt5widgets5
 
 ## Running rtop
 
-To run **rtop** from the command line in the terminal:
-
 ```bash
-$ rtop
+rtop
 ```
 
-![Screenshot_20240807_111431](https://github.com/user-attachments/assets/ae2d2d4f-0154-46cd-8f80-5e80482ceb3b)
-
-## Permissions
-
-As noted in the appendix, some information requires sudo permissions.
-The installation script should handle this automatically.
-
-If you don't see RGA bars, it could indicate a permissions issue.
-To resolve this, try running **rtop** with sudo:
+If RGA bars are not visible, run with elevated privileges:
 
 ```bash
-$ sudo /usr/local/bin/rtop
+sudo /usr/local/bin/rtop
 ```
 
-Alternatively, you can disable the password prompt globally using `sudo visudo`.
+To avoid repeated password prompts, use `sudo visudo` to configure passwordless sudo for this binary.
 
-If the NPU bars are not visible, ensure the NPU is enabled by following the commands provided in the appendix.
+If NPU bars are not visible, verify the NPU is enabled — refer to the appendix commands below.
 
-## Qt5
+## Monitored Metrics
 
-For your convenience, the Qt5 code is included.
+| Metric | sysfs / proc path |
+|--------|-------------------|
+| CPU load | `/proc/stat` |
+| CPU frequency | `/sys/devices/system/cpu/cpu*/cpufreq/scaling_cur_freq` |
+| GPU load | `/sys/class/devfreq/fb000000.gpu/load` |
+| GPU frequency | `/sys/class/devfreq/fb000000.gpu/cur_freq` |
+| NPU load | `/sys/kernel/debug/rknpu/load` *(requires sudo)* |
+| NPU frequency | `/sys/class/devfreq/fdab0000.npu/cur_freq` |
+| RGA load | `/sys/kernel/debug/rkrga/load` *(requires sudo)* |
+| RGA frequency | `/sys/kernel/debug/clk/clk_summary` |
+| Memory / Swap | `/proc/meminfo` |
+| Temperature | `/sys/class/thermal/thermal_zone0/temp` |
+| Fan state | `/sys/class/thermal/cooling_device4/cur_state` |
+| Device model | `/sys/firmware/devicetree/base/compatible` |
 
-## Appendix
-
-The used commands are:
-
-```bash
-#CPU load
-$ cat /proc/stat
-#CPU freq
-$ cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq (or cpu1, cpu2 etc)
-#GPU load
-$ cat /sys/class/devfreq/fb000000.gpu/load
-#GPU freq
-$ cat /sys/class/devfreq/fb000000.gpu/cur_freq
-#NPU load
-$ sudo cat /sys/kernel/debug/rknpu/load
-#NPU freq
-$ cat /sys/class/devfreq/fdab0000.npu/cur_freq
-#RGA load
-$ sudo cat /sys/kernel/debug/rkrga/load
-#RGA freq
-$ sudo cat /sys/kernel/debug/clk/clk_summary | grep rga
-#MEM
-auto memInfo = readMemInfo(); (C++)
-#SWAP
-auto memInfo = readMemInfo(); (C++)
-#TEMP
-$ cat /sys/class/thermal/thermal_zone0/temp
-#FAN
-$ cat /sys/class/thermal/cooling_device4/cur_state
-#DEVICE
-$ cat /sys/firmware/devicetree/base/compatible
-```
-
-[![paypal](https://qengineering.eu/images/TipJarSmall4.png)](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=CPZTM5BB3FCYL)

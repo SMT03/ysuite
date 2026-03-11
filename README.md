@@ -2,7 +2,7 @@
 
 A unified package for headless Radxa ROCK 5B+ systems with real-time monitoring, crash detection, power management, and system optimization. Built specifically for the Rockchip RK3588 SoC with support for its advanced hardware features.
 
-##  Features
+## Features
 
 ### **ytop** - Real-time System Performance Monitor
 - **CPU**: 8-core monitoring (4x Cortex-A76 @ 2.2-2.4GHz, 4x Cortex-A55 @ 1.8GHz) with per-core frequency and load tracking
@@ -13,7 +13,7 @@ A unified package for headless Radxa ROCK 5B+ systems with real-time monitoring,
 - **Memory**: LPDDR5 RAM monitoring (4GB-32GB @ 5500MT/s)
 - **Temperature**: SoC thermal zone monitoring with 80°C throttling detection
 - **Fan Control**: PWM-based cooling management
-- Beautiful CLI dashboard with real-time progress bars
+- Interactive CLI dashboard with real-time progress bars
 
 ### **ylog** - System Log Monitor
 - Real-time critical event detection
@@ -28,30 +28,27 @@ A unified package for headless Radxa ROCK 5B+ systems with real-time monitoring,
 ### **ypower** - Power Monitoring and PD Negotiation
 - Multi-source power detection (USB PD, ADC, barrel jack)
 - Real-time voltage/current monitoring
-- Aggressive 3A current negotiation
+- USB-C PD 3A current negotiation
 
-##  Installation
+## Installation
 
 ### Quick Install
 ```bash
-# Download and install YSuite
 sudo ./install_ysuite.sh
 ```
 
 ### Uninstall
 ```bash
-# Remove YSuite completely
 sudo ./uninstall_ysuite.sh
 ```
 
 ### Direct Board Installation
 ```bash
-# Copy files to your Rock 5B+ board (via USB, SD card, or direct transfer)
-# Then on the board, run:
+# Copy the repository files to your Rock 5B+ board (via USB, SD card, or scp), then run:
 sudo ./install_ysuite.sh
 ```
 
-##  Usage
+## Usage
 
 ### Get Help
 ```bash
@@ -86,7 +83,6 @@ ypower
   - Power: USB-C PD and SARADC_IN4 voltage monitoring
 - **install_ysuite.sh** - Installation script with dependency checking
 - **uninstall_ysuite.sh** - Clean removal script
-- **deploy_ysuite.sh** - Deployment guide and instructions
 - **scripts/** - Helper scripts for kernel optimization and Mali driver management
 
 ## Requirements
