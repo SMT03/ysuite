@@ -28,8 +28,8 @@ sudo apt-get install -y \
 
 1. Clone repository:
 ```bash
-git clone https://github.com/your-repo/rock5b-kernel-enhancement.git
-cd rock5b-kernel-enhancement
+git clone https://github.com/SMT03/ysuite.git
+cd ysuite
 ```
 
 2. Build everything (takes ~30 minutes):
